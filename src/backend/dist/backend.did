@@ -1,0 +1,304 @@
+type UserRole = 
+ variant {
+   admin;
+   owner;
+   user;
+ };
+type UserRecord = 
+ record {
+   activityLog: vec ActivityEntry;
+   createdAt: Timestamp;
+   gpsLat: float64;
+   gpsLng: float64;
+   id: UserId;
+   isBanned: bool;
+   locationText: text;
+   name: text;
+   passwordHash: text;
+   phone: text;
+   role: UserRole;
+ };
+type UserId = text;
+type Timestamp = int;
+type TicketStatus = 
+ variant {
+   open;
+   resolved;
+ };
+type TicketMessage = 
+ record {
+   sender: text;
+   "text": text;
+   timestamp: Timestamp;
+ };
+type Ticket = 
+ record {
+   category: text;
+   createdAt: Timestamp;
+   description: text;
+   id: text;
+   imageUrl: opt text;
+   messages: vec TicketMessage;
+   ownerId: opt text;
+   raisedBy: text;
+   status: TicketStatus;
+ };
+type StayRoom = 
+ record {
+   amenities: vec text;
+   bookedDates: vec text;
+   id: text;
+   isAvailable: bool;
+   ownerId: text;
+   pricePerNight: nat;
+   roomName: text;
+ };
+type SoundType = 
+ variant {
+   alarm;
+   ping;
+   silent;
+ };
+type RetailItem = 
+ record {
+   category: text;
+   id: text;
+   inStock: bool;
+   itemName: text;
+   ownerId: text;
+   priceInr: nat;
+   quantity: nat;
+ };
+type Result_9 = 
+ variant {
+   err: text;
+   ok: FoodItem;
+ };
+type Result_8 = 
+ variant {
+   err: text;
+   ok: PlaySlot;
+ };
+type Result_7 = 
+ variant {
+   err: text;
+   ok: RetailItem;
+ };
+type Result_6 = 
+ variant {
+   err: text;
+   ok: StayRoom;
+ };
+type Result_5 = 
+ variant {
+   err: text;
+   ok: OwnerRecord;
+ };
+type Result_4 = 
+ variant {
+   err: text;
+   ok: Booking;
+ };
+type Result_3 = 
+ variant {
+   err: text;
+   ok: Notification;
+ };
+type Result_2 = 
+ variant {
+   err: text;
+   ok: Ticket;
+ };
+type Result_10 = 
+ variant {
+   err: text;
+   ok: CategoryEntry;
+ };
+type Result_1 = 
+ variant {
+   err: text;
+   ok: UserRecord;
+ };
+type Result = 
+ variant {
+   err: text;
+   ok;
+ };
+type PlaySlot = 
+ record {
+   bookedByUserId: opt text;
+   description: text;
+   hourlyRate: nat;
+   id: text;
+   isBooked: bool;
+   ownerId: text;
+   slotTime: text;
+   surfaceType: text;
+ };
+type OwnerRevenue = 
+ record {
+   businessName: text;
+   ownerId: text;
+   todayRevenue: nat;
+   totalRevenue: nat;
+ };
+type OwnerRecord = 
+ record {
+   activityLog: vec ActivityEntry;
+   businessName: text;
+   category: Category;
+   createdAt: Timestamp;
+   gpsLat: float64;
+   gpsLng: float64;
+   id: UserId;
+   isActive: bool;
+   isBanned: bool;
+   isVerified: bool;
+   locationText: text;
+   name: text;
+   passwordHash: text;
+   phone: text;
+   role: UserRole;
+   upiId: text;
+ };
+type Notification = 
+ record {
+   body: text;
+   createdAt: Timestamp;
+   id: text;
+   isRead: bool;
+   soundType: SoundType;
+   target: text;
+   title: text;
+ };
+type FoodItem = 
+ record {
+   description: text;
+   id: text;
+   isAvailable: bool;
+   isVeg: bool;
+   itemName: text;
+   ownerId: text;
+   priceInr: nat;
+ };
+type CategoryEntry = 
+ record {
+   iconEmoji: text;
+   id: text;
+   isActive: bool;
+   name: text;
+   searchKeywords: vec text;
+   tableType: Category;
+ };
+type Category = 
+ variant {
+   food;
+   play;
+   retail;
+   stay;
+ };
+type BookingStatus = 
+ variant {
+   accepted;
+   completed;
+   declined;
+   pending;
+ };
+type Booking = 
+ record {
+   amountInr: nat;
+   category: Category;
+   createdAt: Timestamp;
+   id: text;
+   itemRef: text;
+   ownerId: text;
+   status: BookingStatus;
+   upiRef: text;
+   userId: text;
+ };
+type AdminStats = 
+ record {
+   platformRevenue: nat;
+   todayBookings: nat;
+   totalOwners: nat;
+   totalUsers: nat;
+ };
+type ActivityEntry = 
+ record {
+   action: text;
+   timestamp: Timestamp;
+ };
+service : {
+  addBookedDate: (roomId: text, date: text) -> (Result);
+  addCategory: (name: text, iconEmoji: text, tableType: Category,
+   searchKeywords: vec text) -> (Result_10);
+  addFoodItem: (ownerId: text, itemName: text, priceInr: nat, isVeg: 
+   bool, description: text) -> (Result_9);
+  addPlaySlot: (ownerId: text, slotTime: text, surfaceType: text, hourlyRate:
+   nat, description: text) -> (Result_8);
+  addRetailItem: (ownerId: text, itemName: text, priceInr: nat, category:
+   text, quantity: nat) -> (Result_7);
+  addStayRoom: (ownerId: text, roomName: text, amenities: vec text,
+   pricePerNight: nat) -> (Result_6);
+  addTicketMessage: (ticketId: text, sender: text, "text": text) -> (Result);
+  banUser: (id: text, isBanned: bool) -> (Result);
+  completeOwnerOnboarding: (userId: text, businessName: text, category:
+   Category, upiId: text) -> (Result_5);
+  createBooking: (userId: text, ownerId: text, category: Category, itemRef:
+   text, amountInr: nat, upiRef: text) -> (Result_4);
+  createNotification: (target: text, title: text, body: text, soundType:
+   SoundType) -> (Result_3);
+  createTicket: (raisedBy: text, ownerId: opt text, category: text,
+   description: text, imageUrl: opt text) -> (Result_2);
+  deleteCategory: (id: text) -> (Result);
+  deleteFoodItem: (id: text) -> (Result);
+  getActiveCategories: () -> (vec CategoryEntry) query;
+  getAdminStats: () -> (AdminStats) query;
+  getAllBookings: () -> (vec Booking) query;
+  getAllCategories: () -> (vec CategoryEntry) query;
+  getAllFoodItems: () -> (vec FoodItem) query;
+  getAllNotifications: () -> (vec Notification) query;
+  getAllOwners: () -> (vec OwnerRecord) query;
+  getAllPlaySlots: () -> (vec PlaySlot) query;
+  getAllRetailItems: () -> (vec RetailItem) query;
+  getAllStayRooms: () -> (vec StayRoom) query;
+  getAllTickets: () -> (vec Ticket) query;
+  getAllUsers: () -> (vec UserRecord) query;
+  getBookingsByOwner: (ownerId: text) -> (vec Booking) query;
+  getBookingsByUser: (userId: text) -> (vec Booking) query;
+  getFoodItemsByOwner: (ownerId: text) -> (vec FoodItem) query;
+  getNotificationsByTarget: (target: text) -> (vec Notification) query;
+  getOwnerById: (id: text) -> (opt OwnerRecord) query;
+  getOwnersByCategory: (category: Category) -> (vec OwnerRecord) query;
+  getPlaySlotsByOwner: (ownerId: text) -> (vec PlaySlot) query;
+  getRetailItemsByOwner: (ownerId: text) -> (vec RetailItem) query;
+  getRevenueByOwner: () -> (vec OwnerRevenue) query;
+  getStayRoomsByOwner: (ownerId: text) -> (vec StayRoom) query;
+  getTicketsByOwner: (ownerId: text) -> (vec Ticket) query;
+  getTicketsByUser: (userId: text) -> (vec Ticket) query;
+  getUserById: (id: text) -> (opt UserRecord) query;
+  logActivity: (userId: text, action: text) -> ();
+  markNotificationRead: (id: text) -> (Result);
+  resolveTicket: (id: text) -> (Result);
+  signinUser: (phone: text, password: text) -> (Result_1);
+  signupUser: (name: text, phone: text, password: text, role: UserRole,
+   gpsLat: float64, gpsLng: float64, locationText: text) -> (Result_1);
+  toggleSlotBooking: (id: text, isBooked: bool, bookedByUserId: opt text) ->
+   (Result);
+  updateBookingStatus: (id: text, status: BookingStatus) -> (Result);
+  updateCategory: (id: text, name: text, iconEmoji: text, isActive: bool,
+   searchKeywords: vec text) -> (Result);
+  updateFoodItem: (id: text, itemName: text, priceInr: nat, isVeg: bool,
+   description: text, isAvailable: bool) -> (Result);
+  updateOwnerProfile: (id: text, businessName: text, upiId: text, isActive:
+   bool) -> (Result);
+  updatePlaySlot: (id: text, slotTime: text, surfaceType: text, hourlyRate:
+   nat, description: text) -> (Result);
+  updateRetailItem: (id: text, itemName: text, priceInr: nat, category: 
+   text, inStock: bool, quantity: nat) -> (Result);
+  updateStayRoom: (id: text, roomName: text, amenities: vec text,
+   pricePerNight: nat, isAvailable: bool) -> (Result);
+  updateUserProfile: (id: text, name: text, locationText: text, gpsLat:
+   float64, gpsLng: float64) -> (Result);
+  verifyOwner: (id: text) -> (Result);
+}
