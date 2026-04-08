@@ -1,7 +1,11 @@
 import { CategoryBadge } from "@/components/ui/AppBadge";
 import { AppButton } from "@/components/ui/AppButton";
 import { AppCard } from "@/components/ui/AppCard";
-import { useGetOwnerById, useUpdateOwnerProfile } from "@/hooks/useQueries";
+import {
+  SubscriptionStatus,
+  useGetOwnerById,
+  useUpdateOwnerProfile,
+} from "@/hooks/useQueries";
 import { clearSession, getSession, updateSession } from "@/lib/auth";
 import { SAFFRON } from "@/lib/constants";
 import { useState } from "react";
@@ -51,6 +55,44 @@ export default function OwnerAccount({ navigateHome }: Props) {
   }
 
   const category = owner?.category ?? "food";
+
+  // Subscription badge helper
+  function SubscriptionBadge() {
+    if (!owner) return null;
+    const status = owner.subscriptionStatus;
+    if (status === SubscriptionStatus.active) {
+      const expiry =
+        owner.subscriptionExpiryDate && owner.subscriptionExpiryDate > 0n
+          ? new Date(
+              Number(owner.subscriptionExpiryDate / 1_000_000n),
+            ).toLocaleDateString("en-IN")
+          : null;
+      return (
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[10px] px-2 py-0.5 rounded-full bg-green-100 text-green-700 font-semibold">
+            ✓ Subscription Active
+          </span>
+          {expiry && (
+            <span className="text-[10px] text-muted-foreground">
+              Expires {expiry}
+            </span>
+          )}
+        </div>
+      );
+    }
+    if (status === SubscriptionStatus.expired) {
+      return (
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-100 text-orange-700 font-semibold">
+          ⚠ Subscription Expired
+        </span>
+      );
+    }
+    return (
+      <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold">
+        ✕ Subscription Inactive
+      </span>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -105,6 +147,51 @@ export default function OwnerAccount({ navigateHome }: Props) {
 
       {/* Content */}
       <div className="px-4 py-5 max-w-lg mx-auto space-y-4">
+        {/* Subscription Status Card */}
+        <AppCard>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-sm font-bold font-display text-foreground mb-2">
+                Subscription
+              </h2>
+              {isLoading ? (
+                <div className="h-5 w-32 bg-muted rounded animate-pulse" />
+              ) : (
+                <SubscriptionBadge />
+              )}
+              {owner?.lastSubscriptionTxId && (
+                <p className="text-[10px] text-muted-foreground mt-1.5 truncate">
+                  Last Tx: {owner.lastSubscriptionTxId}
+                </p>
+              )}
+            </div>
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-xl flex-shrink-0"
+              style={{ backgroundColor: `${SAFFRON}15` }}
+            >
+              💳
+            </div>
+          </div>
+          {owner && owner.subscriptionStatus !== SubscriptionStatus.active && (
+            <div
+              className="mt-3 rounded-xl p-3 text-xs"
+              style={{
+                backgroundColor: "#FEF3C720",
+                borderLeft: `3px solid ${SAFFRON}`,
+              }}
+            >
+              <p className="text-foreground font-medium">
+                Store not visible to customers
+              </p>
+              <p className="text-muted-foreground mt-0.5">
+                Pay ₹1,500/month to{" "}
+                <span className="font-mono font-semibold">akkumaresh@ybl</span>{" "}
+                to activate.
+              </p>
+            </div>
+          )}
+        </AppCard>
+
         {/* Profile info */}
         {!isEditing ? (
           <AppCard>
@@ -226,7 +313,7 @@ export default function OwnerAccount({ navigateHome }: Props) {
           </AppCard>
         )}
 
-        {/* Stats */}
+        {/* Account Details */}
         <AppCard>
           <h2 className="text-sm font-bold font-display text-foreground mb-3">
             Account Details

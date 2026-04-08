@@ -13,8 +13,20 @@ mixin (
     AdminLib.banUser(users, owners, id, isBanned)
   };
 
+  public func deleteUser(id : Text) : async Common.Result<(), Text> {
+    AdminLib.deleteUser(users, id)
+  };
+
+  public func deleteOwner(id : Text) : async Common.Result<(), Text> {
+    AdminLib.deleteOwner(owners, id)
+  };
+
   public query func getAllUsers() : async [UserTypes.UserRecord] {
     AdminLib.getAllUsers(users)
+  };
+
+  public query func getAllOwnersAdmin() : async [UserTypes.OwnerRecord] {
+    AdminLib.getAllOwners(owners)
   };
 
   public query func getAdminStats() : async UserTypes.AdminStats {

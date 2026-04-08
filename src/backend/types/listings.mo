@@ -17,12 +17,17 @@ module {
     pricePerNight : Nat;
     isAvailable : Bool;
     bookedDates : [Text];
+    checkInDate : Text;
+    checkOutDate : Text;
   };
 
   public type PlaySlot = {
     id : Text;
     ownerId : Text;
     slotTime : Text;
+    slotDate : Text;
+    startTime : Text;
+    endTime : Text;
     surfaceType : Text;
     hourlyRate : Nat;
     description : Text;
@@ -38,5 +43,6 @@ module {
     category : Text;
     inStock : Bool;
     quantity : Nat;
+    deliveryFeePerKm : Nat;
   };
 };

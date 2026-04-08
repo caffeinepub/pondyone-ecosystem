@@ -7,6 +7,7 @@ import Common "types/common";
 import UserLib "lib/users";
 import List "mo:core/List";
 import Time "mo:core/Time";
+import Migration "migration";
 
 import AuthMixin "mixins/auth-api";
 import OwnerMixin "mixins/owner-api";
@@ -20,8 +21,7 @@ import TicketsMixin "mixins/tickets-api";
 import CategoriesMixin "mixins/categories-api";
 import NotificationsMixin "mixins/notifications-api";
 
-
-
+(with migration = Migration.run)
 actor {
   // --- User & Owner state ---
   let users = List.empty<UserTypes.UserRecord>();
@@ -85,6 +85,10 @@ actor {
       upiId = "ravi@paytm";
       isVerified = true;
       isActive = true;
+      subscriptionStatus = #active;
+      subscriptionExpiryDate = now + 30 * 24 * 60 * 60 * 1_000_000_000;
+      lastSubscriptionPaymentDate = now;
+      lastSubscriptionTxId = "seed_txid_1";
     };
     let owner2 : UserTypes.OwnerRecord = {
       id = "owner2";
@@ -103,6 +107,10 @@ actor {
       upiId = "priya@gpay";
       isVerified = true;
       isActive = true;
+      subscriptionStatus = #active;
+      subscriptionExpiryDate = now + 30 * 24 * 60 * 60 * 1_000_000_000;
+      lastSubscriptionPaymentDate = now;
+      lastSubscriptionTxId = "seed_txid_2";
     };
     let owner3 : UserTypes.OwnerRecord = {
       id = "owner3";
@@ -121,6 +129,10 @@ actor {
       upiId = "turf@paytm";
       isVerified = true;
       isActive = true;
+      subscriptionStatus = #active;
+      subscriptionExpiryDate = now + 30 * 24 * 60 * 60 * 1_000_000_000;
+      lastSubscriptionPaymentDate = now;
+      lastSubscriptionTxId = "seed_txid_3";
     };
     let owner4 : UserTypes.OwnerRecord = {
       id = "owner4";
@@ -139,6 +151,10 @@ actor {
       upiId = "kumar@upi";
       isVerified = true;
       isActive = true;
+      subscriptionStatus = #active;
+      subscriptionExpiryDate = now + 30 * 24 * 60 * 60 * 1_000_000_000;
+      lastSubscriptionPaymentDate = now;
+      lastSubscriptionTxId = "seed_txid_4";
     };
     owners.add(owner1);
     owners.add(owner2);
@@ -204,6 +220,8 @@ actor {
         pricePerNight = price;
         isAvailable = true;
         bookedDates = [];
+        checkInDate = "";
+        checkOutDate = "";
       };
       stayRooms.add(room);
     };
@@ -224,6 +242,9 @@ actor {
         id = "play_" # padded;
         ownerId = "owner3";
         slotTime = hour;
+        slotDate = "2026-04-08";
+        startTime = hour;
+        endTime = hour;
         surfaceType = "Artificial Turf";
         hourlyRate = 500;
         description = "";
@@ -252,6 +273,7 @@ actor {
         category = cat;
         inStock = qty > 0;
         quantity = qty;
+        deliveryFeePerKm = 10;
       };
       retailItems.add(item);
     };
@@ -289,9 +311,9 @@ actor {
   include OwnerMixin(users, owners);
   include AdminMixin(users, owners, bookings);
   include FoodMixin(foodItems, foodCounter);
-  include StayMixin(stayRooms, stayCounter);
-  include PlayMixin(playSlots, playCounter);
-  include RetailMixin(retailItems, retailCounter);
+  include StayMixin(stayRooms, stayCounter, owners);
+  include PlayMixin(playSlots, playCounter, owners);
+  include RetailMixin(retailItems, retailCounter, owners);
   include BookingsMixin(bookings, bookingCounter);
   include TicketsMixin(tickets, ticketCounter);
   include CategoriesMixin(categories, categoryCounter);

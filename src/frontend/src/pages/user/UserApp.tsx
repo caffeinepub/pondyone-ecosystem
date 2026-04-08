@@ -23,6 +23,11 @@ export type UserRoute =
       upiId: string;
       amount: bigint;
       category: string;
+      checkInDate?: string;
+      checkOutDate?: string;
+      slotDate?: string;
+      startTime?: string;
+      endTime?: string;
     }
   | { page: "confirmation"; orderId: string }
   | { page: "bookings" }
@@ -99,6 +104,11 @@ export default function UserApp() {
             upiId={route.upiId}
             amount={route.amount}
             category={route.category}
+            checkInDate={route.checkInDate}
+            checkOutDate={route.checkOutDate}
+            slotDate={route.slotDate}
+            startTime={route.startTime}
+            endTime={route.endTime}
           />
         );
       case "confirmation":

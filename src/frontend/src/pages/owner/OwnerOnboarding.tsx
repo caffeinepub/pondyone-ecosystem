@@ -204,7 +204,9 @@ export default function OwnerOnboarding({
         for (const slot of selectedSlots) {
           await addPlay.mutateAsync({
             ownerId,
-            slotTime: slot,
+            slotDate: new Date().toISOString().split("T")[0],
+            startTime: slot,
+            endTime: slot,
             surfaceType,
             hourlyRate: BigInt(hourlyRate || "0"),
             description: "",

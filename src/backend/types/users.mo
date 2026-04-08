@@ -1,6 +1,8 @@
 import Common "common";
 
 module {
+  public type SubscriptionStatus = { #active; #inactive; #expired };
+
   public type UserRecord = {
     id : Common.UserId;
     name : Text;
@@ -32,6 +34,10 @@ module {
     upiId : Text;
     isVerified : Bool;
     isActive : Bool;
+    subscriptionStatus : SubscriptionStatus;
+    subscriptionExpiryDate : Common.Timestamp;
+    lastSubscriptionPaymentDate : Common.Timestamp;
+    lastSubscriptionTxId : Text;
   };
 
   public type AdminStats = {

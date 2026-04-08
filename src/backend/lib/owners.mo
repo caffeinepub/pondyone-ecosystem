@@ -5,6 +5,7 @@ import List "mo:core/List";
 import Time "mo:core/Time";
 
 module {
+
   public func completeOnboarding(
     users : List.List<Types.UserRecord>,
     owners : List.List<Types.OwnerRecord>,
@@ -38,6 +39,10 @@ module {
           upiId;
           isVerified = false;
           isActive = true;
+          subscriptionStatus = #inactive;
+          subscriptionExpiryDate = 0;
+          lastSubscriptionPaymentDate = 0;
+          lastSubscriptionTxId = "";
         };
         owners.add(ownerRecord);
         // Update user role in users list
@@ -78,11 +83,15 @@ module {
     owners : List.List<Types.OwnerRecord>,
     category : Common.Category,
   ) : [Types.OwnerRecord] {
-    owners.filter(func(o) { o.category == category }).toArray()
+    owners.filter(func(o) { o.category == category and o.subscriptionStatus == #active }).toArray()
   };
 
   public func getAllOwners(owners : List.List<Types.OwnerRecord>) : [Types.OwnerRecord] {
     owners.toArray()
+  };
+
+  public func getActiveOwners(owners : List.List<Types.OwnerRecord>) : [Types.OwnerRecord] {
+    owners.filter(func(o) { o.subscriptionStatus == #active }).toArray()
   };
 
   public func verifyOwner(
@@ -94,6 +103,48 @@ module {
       if (o.id == id) {
         found := true;
         { o with isVerified = true }
+      } else { o }
+    });
+    if (found) { #ok(()) } else { #err("Owner not found") }
+  };
+
+  public func updateSubscriptionStatus(
+    owners : List.List<Types.OwnerRecord>,
+    ownerId : Text,
+    subscriptionStatus : Types.SubscriptionStatus,
+    expiryDate : Common.Timestamp,
+    txId : Text,
+  ) : Common.Result<(), Text> {
+    var found = false;
+    owners.mapInPlace(func(o) {
+      if (o.id == ownerId) {
+        found := true;
+        { o with subscriptionStatus; subscriptionExpiryDate = expiryDate; lastSubscriptionTxId = txId }
+      } else { o }
+    });
+    if (found) { #ok(()) } else { #err("Owner not found") }
+  };
+
+  public func verifySubscriptionPayment(
+    owners : List.List<Types.OwnerRecord>,
+    ownerId : Text,
+    txId : Text,
+  ) : Common.Result<(), Text> {
+    var found = false;
+    let thirtyDaysNs : Int = 30 * 24 * 60 * 60 * 1_000_000_000;
+    let now = Time.now();
+    let expiryDate = now + thirtyDaysNs;
+    owners.mapInPlace(func(o) {
+      if (o.id == ownerId) {
+        found := true;
+        {
+          o with
+          subscriptionStatus = #active;
+          subscriptionExpiryDate = expiryDate;
+          lastSubscriptionTxId = txId;
+          lastSubscriptionPaymentDate = now;
+          isVerified = true;
+        }
       } else { o }
     });
     if (found) { #ok(()) } else { #err("Owner not found") }

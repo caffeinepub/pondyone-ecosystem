@@ -14,9 +14,17 @@ mixin (
     itemRef : Text,
     amountInr : Nat,
     upiRef : Text,
+    checkInDate : Text,
+    checkOutDate : Text,
+    slotDate : Text,
+    deliveryFee : Nat,
   ) : async Common.Result<BookingTypes.Booking, Text> {
     bookingCounter.count += 1;
-    BookingsLib.createBooking(bookings, bookingCounter.count, userId, ownerId, category, itemRef, amountInr, upiRef)
+    BookingsLib.createBooking(
+      bookings, bookingCounter.count,
+      userId, ownerId, category, itemRef, amountInr, upiRef,
+      checkInDate, checkOutDate, slotDate, deliveryFee
+    )
   };
 
   public func updateBookingStatus(

@@ -29,8 +29,34 @@ module {
     if (found) { #ok(()) } else { #err("User not found") }
   };
 
+  public func deleteUser(
+    users : List.List<UserTypes.UserRecord>,
+    id : Text,
+  ) : Common.Result<(), Text> {
+    let sizeBefore = users.size();
+    let kept = users.filter(func(u) { u.id != id });
+    users.clear();
+    users.append(kept);
+    if (users.size() < sizeBefore) { #ok(()) } else { #err("User not found") }
+  };
+
+  public func deleteOwner(
+    owners : List.List<UserTypes.OwnerRecord>,
+    id : Text,
+  ) : Common.Result<(), Text> {
+    let sizeBefore = owners.size();
+    let kept = owners.filter(func(o) { o.id != id });
+    owners.clear();
+    owners.append(kept);
+    if (owners.size() < sizeBefore) { #ok(()) } else { #err("Owner not found") }
+  };
+
   public func getAllUsers(users : List.List<UserTypes.UserRecord>) : [UserTypes.UserRecord] {
     users.toArray()
+  };
+
+  public func getAllOwners(owners : List.List<UserTypes.OwnerRecord>) : [UserTypes.OwnerRecord] {
+    owners.toArray()
   };
 
   public func getAdminStats(

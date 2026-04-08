@@ -11,5 +11,9 @@ module {
     status : Common.BookingStatus;
     upiRef : Text;
     createdAt : Common.Timestamp;
+    checkInDate : Text;
+    checkOutDate : Text;
+    slotDate : Text;
+    deliveryFee : Nat;
   };
 };

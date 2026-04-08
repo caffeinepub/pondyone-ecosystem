@@ -1,4 +1,4 @@
-// Version: 1.0.0
+// Version: 3.0.0
 type ActivityEntry__227627608 =
   {action : Text; timestamp : Timestamp__301639476};
 type BookingStatus__96719981 = {#accepted; #completed; #declined; #pending};
@@ -6,10 +6,14 @@ type Booking__1057793126 =
   {
     amountInr : Nat;
     category : Category__936342486;
+    checkInDate : Text;
+    checkOutDate : Text;
     createdAt : Timestamp__301639476;
+    deliveryFee : Nat;
     id : Text;
     itemRef : Text;
     ownerId : Text;
+    slotDate : Text;
     status : BookingStatus__96719981;
     upiRef : Text;
     userId : Text
@@ -34,6 +38,13 @@ type FoodItem__273590171 =
     ownerId : Text;
     priceInr : Nat
   };
+type List__415060402<T> = List__790383201<T>;
+type List__790383201<T> =
+  {
+    var blockIndex : Nat__490723111;
+    var blocks : [var [var ?T]];
+    var elementIndex : Nat__490723111
+  };
 type Nat__490723111 = Nat__920180692;
 type Nat__920180692 = Nat;
 type Notification__1047602386 =
@@ -45,6 +56,68 @@ type Notification__1047602386 =
     soundType : SoundType__612494860;
     target : Text;
     title : Text
+  };
+type OldBooking__221110599 =
+  {
+    amountInr : Nat;
+    category : {#food; #play; #retail; #stay};
+    createdAt : Int;
+    id : Text;
+    itemRef : Text;
+    ownerId : Text;
+    status : {#accepted; #completed; #declined; #pending};
+    upiRef : Text;
+    userId : Text
+  };
+type OldOwnerRecord__384113953 =
+  {
+    activityLog : [{action : Text; timestamp : Int}];
+    businessName : Text;
+    category : {#food; #play; #retail; #stay};
+    createdAt : Int;
+    gpsLat : Float;
+    gpsLng : Float;
+    id : Text;
+    isActive : Bool;
+    isBanned : Bool;
+    isVerified : Bool;
+    locationText : Text;
+    name : Text;
+    passwordHash : Text;
+    phone : Text;
+    role : {#admin; #owner; #user};
+    upiId : Text
+  };
+type OldPlaySlot__431777766 =
+  {
+    bookedByUserId : ?Text;
+    description : Text;
+    hourlyRate : Nat;
+    id : Text;
+    isBooked : Bool;
+    ownerId : Text;
+    slotTime : Text;
+    surfaceType : Text
+  };
+type OldRetailItem__829875158 =
+  {
+    category : Text;
+    id : Text;
+    inStock : Bool;
+    itemName : Text;
+    ownerId : Text;
+    priceInr : Nat;
+    quantity : Nat
+  };
+type OldStayRoom__42470969 =
+  {
+    amenities : [Text];
+    bookedDates : [Text];
+    id : Text;
+    isAvailable : Bool;
+    ownerId : Text;
+    pricePerNight : Nat;
+    roomName : Text
   };
 type OwnerRecord__810551397 =
   {
@@ -58,27 +131,35 @@ type OwnerRecord__810551397 =
     isActive : Bool;
     isBanned : Bool;
     isVerified : Bool;
+    lastSubscriptionPaymentDate : Timestamp__301639476;
+    lastSubscriptionTxId : Text;
     locationText : Text;
     name : Text;
     passwordHash : Text;
     phone : Text;
     role : UserRole__451090586;
+    subscriptionExpiryDate : Timestamp__301639476;
+    subscriptionStatus : SubscriptionStatus__287940486;
     upiId : Text
   };
 type PlaySlot__693297752 =
   {
     bookedByUserId : ?Text;
     description : Text;
+    endTime : Text;
     hourlyRate : Nat;
     id : Text;
     isBooked : Bool;
     ownerId : Text;
+    slotDate : Text;
     slotTime : Text;
+    startTime : Text;
     surfaceType : Text
   };
 type RetailItem__224213999 =
   {
     category : Text;
+    deliveryFeePerKm : Nat;
     id : Text;
     inStock : Bool;
     itemName : Text;
@@ -91,12 +172,15 @@ type StayRoom__1049891599 =
   {
     amenities : [Text];
     bookedDates : [Text];
+    checkInDate : Text;
+    checkOutDate : Text;
     id : Text;
     isAvailable : Bool;
     ownerId : Text;
     pricePerNight : Nat;
     roomName : Text
   };
+type SubscriptionStatus__287940486 = {#active; #expired; #inactive};
 type TicketMessage__492769089 =
   {sender : Text; text : Text; timestamp : Timestamp__301639476};
 type TicketStatus__648101983 = {#open; #resolved};
@@ -129,7 +213,53 @@ type UserRecord__195968172 =
     role : UserRole__451090586
   };
 type UserRole__451090586 = {#admin; #owner; #user};
-actor {
+actor ({
+  stable bookingCounter : {var count : Nat};
+  in bookings : List__415060402<OldBooking__221110599>;
+  stable categories :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?CategoryEntry__510011655]];
+      var elementIndex : Nat__490723111
+    };
+  stable categoryCounter : {var count : Nat};
+  stable foodCounter : {var count : Nat};
+  stable foodItems :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?FoodItem__273590171]];
+      var elementIndex : Nat__490723111
+    };
+  stable notificationCounter : {var count : Nat};
+  stable notifications :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?Notification__1047602386]];
+      var elementIndex : Nat__490723111
+    };
+  in owners : List__415060402<OldOwnerRecord__384113953>;
+  stable playCounter : {var count : Nat};
+  in playSlots : List__415060402<OldPlaySlot__431777766>;
+  stable retailCounter : {var count : Nat};
+  in retailItems : List__415060402<OldRetailItem__829875158>;
+  stable var seeded : Bool;
+  stable stayCounter : {var count : Nat};
+  in stayRooms : List__415060402<OldStayRoom__42470969>;
+  stable ticketCounter : {var count : Nat};
+  stable tickets :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?Ticket__1011436516]];
+      var elementIndex : Nat__490723111
+    };
+  stable userCounter : {var count : Nat};
+  stable users :
+    {
+      var blockIndex : Nat__490723111;
+      var blocks : [var [var ?UserRecord__195968172]];
+      var elementIndex : Nat__490723111
+    }
+}, {
   stable bookingCounter : {var count : Nat};
   stable bookings :
     {
@@ -200,4 +330,4 @@ actor {
       var blocks : [var [var ?UserRecord__195968172]];
       var elementIndex : Nat__490723111
     }
-};
+}) ;

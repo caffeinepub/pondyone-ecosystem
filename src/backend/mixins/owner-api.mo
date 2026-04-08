@@ -37,7 +37,28 @@ mixin (
     OwnerLib.getAllOwners(owners)
   };
 
+  public query func getActiveOwners() : async [UserTypes.OwnerRecord] {
+    OwnerLib.getActiveOwners(owners)
+  };
+
   public func verifyOwner(id : Text) : async Common.Result<(), Text> {
     OwnerLib.verifyOwner(owners, id)
+  };
+
+  public func updateSubscriptionStatus(
+    ownerId : Text,
+    subscriptionStatus : UserTypes.SubscriptionStatus,
+    expiryDate : Common.Timestamp,
+    txId : Text,
+  ) : async Common.Result<(), Text> {
+    OwnerLib.updateSubscriptionStatus(owners, ownerId, subscriptionStatus, expiryDate, txId)
+  };
+
+  // Called by the logged-in owner: submits their UPI txId, activates subscription + verifies account
+  public func verifySubscriptionPayment(
+    ownerId : Text,
+    txId : Text,
+  ) : async Common.Result<(), Text> {
+    OwnerLib.verifySubscriptionPayment(owners, ownerId, txId)
   };
 };

@@ -20,6 +20,10 @@ module {
     itemRef : Text,
     amountInr : Nat,
     upiRef : Text,
+    checkInDate : Text,
+    checkOutDate : Text,
+    slotDate : Text,
+    deliveryFee : Nat,
   ) : Common.Result<Types.Booking, Text> {
     let id = generateId(counter);
     let booking : Types.Booking = {
@@ -32,6 +36,10 @@ module {
       status = #pending;
       upiRef;
       createdAt = Time.now();
+      checkInDate;
+      checkOutDate;
+      slotDate;
+      deliveryFee;
     };
     bookings.add(booking);
     #ok(booking)

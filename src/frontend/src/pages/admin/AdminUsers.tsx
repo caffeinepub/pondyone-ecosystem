@@ -6,6 +6,8 @@ import {
   useAllOwners,
   useAllUsers,
   useBanUser,
+  useDeleteOwner,
+  useDeleteUser,
   useUpdateUserProfile,
   useVerifyOwner,
 } from "@/hooks/useQueries";
@@ -17,6 +19,7 @@ import {
   Search,
   ShieldCheck,
   ShieldOff,
+  Trash2,
 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -31,6 +34,61 @@ function formatDate(ts: bigint): string {
   });
 }
 
+// ─── Delete confirmation dialog ────────────────────────────────────────────
+function DeleteConfirmModal({
+  name,
+  onConfirm,
+  onCancel,
+  isPending,
+}: {
+  name: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+  isPending: boolean;
+}) {
+  return (
+    <AppModal
+      isOpen
+      onClose={onCancel}
+      title="Confirm Deletion"
+      className="max-w-sm"
+    >
+      <div className="space-y-4">
+        <p className="text-sm text-foreground">
+          Are you sure you want to permanently delete{" "}
+          <span className="font-semibold">{name}</span>? This cannot be undone.
+        </p>
+        <div className="flex gap-3">
+          <AppButton
+            variant="outline"
+            fullWidth
+            onClick={onCancel}
+            disabled={isPending}
+            data-ocid="delete-cancel"
+          >
+            Cancel
+          </AppButton>
+          <AppButton
+            variant="danger"
+            fullWidth
+            onClick={onConfirm}
+            disabled={isPending}
+            data-ocid="delete-confirm"
+          >
+            {isPending ? (
+              <Loader2 className="w-4 h-4 animate-spin mr-1" />
+            ) : (
+              <Trash2 className="w-4 h-4 mr-1" />
+            )}
+            {isPending ? "Deleting…" : "Delete"}
+          </AppButton>
+        </div>
+      </div>
+    </AppModal>
+  );
+}
+
+// ─── User profile modal ────────────────────────────────────────────────────
 function UserProfileModal({
   user,
   onClose,
@@ -149,6 +207,7 @@ function UserProfileModal({
   );
 }
 
+// ─── Owner profile modal ───────────────────────────────────────────────────
 function OwnerProfileModal({
   owner,
   onClose,
@@ -240,6 +299,7 @@ function OwnerProfileModal({
   );
 }
 
+// ─── Main page ─────────────────────────────────────────────────────────────
 export default function AdminUsers() {
   const [tab, setTab] = useState<Tab>("users");
   const [search, setSearch] = useState("");
@@ -248,11 +308,18 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<UserRecord | null>(null);
   const [selectedOwner, setSelectedOwner] = useState<OwnerRecord | null>(null);
   const [verifyingOwnerId, setVerifyingOwnerId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+    type: "user" | "owner";
+  } | null>(null);
 
   const { data: users = [], isLoading: loadingUsers } = useAllUsers();
   const { data: owners = [], isLoading: loadingOwners } = useAllOwners();
   const banUser = useBanUser();
   const verifyOwner = useVerifyOwner();
+  const deleteUser = useDeleteUser();
+  const deleteOwner = useDeleteOwner();
 
   const filteredUsers = users.filter((u) => {
     const matchSearch =
@@ -277,6 +344,23 @@ export default function AdminUsers() {
       (statusFilter === "active" && !o.isBanned);
     return matchSearch && matchCat && matchStatus;
   });
+
+  function handleDeleteConfirm() {
+    if (!deleteTarget) return;
+    const mutation = deleteTarget.type === "user" ? deleteUser : deleteOwner;
+    mutation.mutate(deleteTarget.id, {
+      onSuccess: () => {
+        toast.success(`${deleteTarget.name} has been permanently deleted.`);
+        setDeleteTarget(null);
+      },
+      onError: () => {
+        toast.error("Failed to delete. Please try again.");
+        setDeleteTarget(null);
+      },
+    });
+  }
+
+  const isDeletePending = deleteUser.isPending || deleteOwner.isPending;
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
@@ -461,6 +545,20 @@ export default function AdminUsers() {
                           >
                             Profile
                           </AppButton>
+                          <AppButton
+                            size="sm"
+                            variant="danger"
+                            onClick={() =>
+                              setDeleteTarget({
+                                id: user.id,
+                                name: user.name,
+                                type: "user",
+                              })
+                            }
+                            data-ocid={`delete-user-${user.id}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </AppButton>
                         </div>
                       </td>
                     </tr>
@@ -602,6 +700,20 @@ export default function AdminUsers() {
                           >
                             Profile
                           </AppButton>
+                          <AppButton
+                            size="sm"
+                            variant="danger"
+                            onClick={() =>
+                              setDeleteTarget({
+                                id: owner.id,
+                                name: owner.businessName,
+                                type: "owner",
+                              })
+                            }
+                            data-ocid={`delete-owner-${owner.id}`}
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </AppButton>
                         </div>
                       </td>
                     </tr>
@@ -613,6 +725,7 @@ export default function AdminUsers() {
         </AppCard>
       )}
 
+      {/* Profile modals */}
       {selectedUser && (
         <UserProfileModal
           user={selectedUser}
@@ -623,6 +736,16 @@ export default function AdminUsers() {
         <OwnerProfileModal
           owner={selectedOwner}
           onClose={() => setSelectedOwner(null)}
+        />
+      )}
+
+      {/* Delete confirmation */}
+      {deleteTarget && (
+        <DeleteConfirmModal
+          name={deleteTarget.name}
+          onConfirm={handleDeleteConfirm}
+          onCancel={() => setDeleteTarget(null)}
+          isPending={isDeletePending}
         />
       )}
     </div>

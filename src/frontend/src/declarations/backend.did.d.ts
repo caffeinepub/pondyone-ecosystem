@@ -20,11 +20,15 @@ export interface AdminStats {
 export interface Booking {
   'id' : string,
   'status' : BookingStatus,
+  'deliveryFee' : bigint,
   'ownerId' : string,
   'userId' : string,
   'createdAt' : Timestamp,
+  'checkInDate' : string,
   'upiRef' : string,
+  'slotDate' : string,
   'category' : Category,
+  'checkOutDate' : string,
   'amountInr' : bigint,
   'itemRef' : string,
 }
@@ -64,12 +68,16 @@ export interface Notification {
 }
 export interface OwnerRecord {
   'id' : UserId,
+  'subscriptionExpiryDate' : Timestamp,
+  'lastSubscriptionTxId' : string,
   'name' : string,
   'createdAt' : Timestamp,
   'role' : UserRole,
   'businessName' : string,
   'isActive' : boolean,
+  'lastSubscriptionPaymentDate' : Timestamp,
   'activityLog' : Array<ActivityEntry>,
+  'subscriptionStatus' : SubscriptionStatus,
   'isVerified' : boolean,
   'upiId' : string,
   'isBanned' : boolean,
@@ -88,11 +96,14 @@ export interface OwnerRevenue {
 }
 export interface PlaySlot {
   'id' : string,
+  'startTime' : string,
+  'endTime' : string,
   'ownerId' : string,
   'surfaceType' : string,
   'bookedByUserId' : [] | [string],
   'hourlyRate' : bigint,
   'description' : string,
+  'slotDate' : string,
   'slotTime' : string,
   'isBooked' : boolean,
 }
@@ -122,6 +133,7 @@ export interface RetailItem {
   'id' : string,
   'inStock' : boolean,
   'ownerId' : string,
+  'deliveryFeePerKm' : bigint,
   'itemName' : string,
   'quantity' : bigint,
   'category' : string,
@@ -135,10 +147,15 @@ export interface StayRoom {
   'ownerId' : string,
   'pricePerNight' : bigint,
   'isAvailable' : boolean,
+  'checkInDate' : string,
   'amenities' : Array<string>,
+  'checkOutDate' : string,
   'roomName' : string,
   'bookedDates' : Array<string>,
 }
+export type SubscriptionStatus = { 'active' : null } |
+  { 'expired' : null } |
+  { 'inactive' : null };
 export interface Ticket {
   'id' : string,
   'status' : TicketStatus,
@@ -186,7 +203,7 @@ export interface _SERVICE {
     Result_9
   >,
   'addPlaySlot' : ActorMethod<
-    [string, string, string, bigint, string],
+    [string, string, string, string, string, bigint, string],
     Result_8
   >,
   'addRetailItem' : ActorMethod<
@@ -204,26 +221,42 @@ export interface _SERVICE {
     Result_5
   >,
   'createBooking' : ActorMethod<
-    [string, string, Category, string, bigint, string],
+    [
+      string,
+      string,
+      Category,
+      string,
+      bigint,
+      string,
+      string,
+      string,
+      string,
+      bigint,
+    ],
     Result_4
   >,
   'createNotification' : ActorMethod<
     [string, string, string, SoundType],
     Result_3
   >,
+  'createStayBooking' : ActorMethod<[string, string, string], Result>,
   'createTicket' : ActorMethod<
     [string, [] | [string], string, string, [] | [string]],
     Result_2
   >,
   'deleteCategory' : ActorMethod<[string], Result>,
   'deleteFoodItem' : ActorMethod<[string], Result>,
+  'deleteOwner' : ActorMethod<[string], Result>,
+  'deleteUser' : ActorMethod<[string], Result>,
   'getActiveCategories' : ActorMethod<[], Array<CategoryEntry>>,
+  'getActiveOwners' : ActorMethod<[], Array<OwnerRecord>>,
   'getAdminStats' : ActorMethod<[], AdminStats>,
   'getAllBookings' : ActorMethod<[], Array<Booking>>,
   'getAllCategories' : ActorMethod<[], Array<CategoryEntry>>,
   'getAllFoodItems' : ActorMethod<[], Array<FoodItem>>,
   'getAllNotifications' : ActorMethod<[], Array<Notification>>,
   'getAllOwners' : ActorMethod<[], Array<OwnerRecord>>,
+  'getAllOwnersAdmin' : ActorMethod<[], Array<OwnerRecord>>,
   'getAllPlaySlots' : ActorMethod<[], Array<PlaySlot>>,
   'getAllRetailItems' : ActorMethod<[], Array<RetailItem>>,
   'getAllStayRooms' : ActorMethod<[], Array<StayRoom>>,
@@ -231,6 +264,7 @@ export interface _SERVICE {
   'getAllUsers' : ActorMethod<[], Array<UserRecord>>,
   'getBookingsByOwner' : ActorMethod<[string], Array<Booking>>,
   'getBookingsByUser' : ActorMethod<[string], Array<Booking>>,
+  'getDeliveryFee' : ActorMethod<[string, number, number], bigint>,
   'getFoodItemsByOwner' : ActorMethod<[string], Array<FoodItem>>,
   'getNotificationsByTarget' : ActorMethod<[string], Array<Notification>>,
   'getOwnerById' : ActorMethod<[string], [] | [OwnerRecord]>,
@@ -238,6 +272,8 @@ export interface _SERVICE {
   'getPlaySlotsByOwner' : ActorMethod<[string], Array<PlaySlot>>,
   'getRetailItemsByOwner' : ActorMethod<[string], Array<RetailItem>>,
   'getRevenueByOwner' : ActorMethod<[], Array<OwnerRevenue>>,
+  'getSlotsByDate' : ActorMethod<[string, string], Array<PlaySlot>>,
+  'getStayAvailability' : ActorMethod<[string, string, string], boolean>,
   'getStayRoomsByOwner' : ActorMethod<[string], Array<StayRoom>>,
   'getTicketsByOwner' : ActorMethod<[string], Array<Ticket>>,
   'getTicketsByUser' : ActorMethod<[string], Array<Ticket>>,
@@ -256,6 +292,7 @@ export interface _SERVICE {
     [string, string, string, boolean, Array<string>],
     Result
   >,
+  'updateDeliveryFeePerKm' : ActorMethod<[string, bigint], Result>,
   'updateFoodItem' : ActorMethod<
     [string, string, bigint, boolean, string, boolean],
     Result
@@ -273,11 +310,16 @@ export interface _SERVICE {
     [string, string, Array<string>, bigint, boolean],
     Result
   >,
+  'updateSubscriptionStatus' : ActorMethod<
+    [string, SubscriptionStatus, Timestamp, string],
+    Result
+  >,
   'updateUserProfile' : ActorMethod<
     [string, string, string, number, number],
     Result
   >,
   'verifyOwner' : ActorMethod<[string], Result>,
+  'verifySubscriptionPayment' : ActorMethod<[string, string], Result>,
 }
 export declare const idlService: IDL.ServiceClass;
 export declare const idlInitArgs: IDL.Type[];

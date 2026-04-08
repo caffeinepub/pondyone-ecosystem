@@ -39,11 +39,14 @@ export const FoodItem = IDL.Record({
 export const Result_9 = IDL.Variant({ 'ok' : FoodItem, 'err' : IDL.Text });
 export const PlaySlot = IDL.Record({
   'id' : IDL.Text,
+  'startTime' : IDL.Text,
+  'endTime' : IDL.Text,
   'ownerId' : IDL.Text,
   'surfaceType' : IDL.Text,
   'bookedByUserId' : IDL.Opt(IDL.Text),
   'hourlyRate' : IDL.Nat,
   'description' : IDL.Text,
+  'slotDate' : IDL.Text,
   'slotTime' : IDL.Text,
   'isBooked' : IDL.Bool,
 });
@@ -52,6 +55,7 @@ export const RetailItem = IDL.Record({
   'id' : IDL.Text,
   'inStock' : IDL.Bool,
   'ownerId' : IDL.Text,
+  'deliveryFeePerKm' : IDL.Nat,
   'itemName' : IDL.Text,
   'quantity' : IDL.Nat,
   'category' : IDL.Text,
@@ -63,7 +67,9 @@ export const StayRoom = IDL.Record({
   'ownerId' : IDL.Text,
   'pricePerNight' : IDL.Nat,
   'isAvailable' : IDL.Bool,
+  'checkInDate' : IDL.Text,
   'amenities' : IDL.Vec(IDL.Text),
+  'checkOutDate' : IDL.Text,
   'roomName' : IDL.Text,
   'bookedDates' : IDL.Vec(IDL.Text),
 });
@@ -79,14 +85,23 @@ export const ActivityEntry = IDL.Record({
   'action' : IDL.Text,
   'timestamp' : Timestamp,
 });
+export const SubscriptionStatus = IDL.Variant({
+  'active' : IDL.Null,
+  'expired' : IDL.Null,
+  'inactive' : IDL.Null,
+});
 export const OwnerRecord = IDL.Record({
   'id' : UserId,
+  'subscriptionExpiryDate' : Timestamp,
+  'lastSubscriptionTxId' : IDL.Text,
   'name' : IDL.Text,
   'createdAt' : Timestamp,
   'role' : UserRole,
   'businessName' : IDL.Text,
   'isActive' : IDL.Bool,
+  'lastSubscriptionPaymentDate' : Timestamp,
   'activityLog' : IDL.Vec(ActivityEntry),
+  'subscriptionStatus' : SubscriptionStatus,
   'isVerified' : IDL.Bool,
   'upiId' : IDL.Text,
   'isBanned' : IDL.Bool,
@@ -107,11 +122,15 @@ export const BookingStatus = IDL.Variant({
 export const Booking = IDL.Record({
   'id' : IDL.Text,
   'status' : BookingStatus,
+  'deliveryFee' : IDL.Nat,
   'ownerId' : IDL.Text,
   'userId' : IDL.Text,
   'createdAt' : Timestamp,
+  'checkInDate' : IDL.Text,
   'upiRef' : IDL.Text,
+  'slotDate' : IDL.Text,
   'category' : Category,
+  'checkOutDate' : IDL.Text,
   'amountInr' : IDL.Nat,
   'itemRef' : IDL.Text,
 });
@@ -192,7 +211,7 @@ export const idlService = IDL.Service({
       [],
     ),
   'addPlaySlot' : IDL.Func(
-      [IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
+      [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
       [Result_8],
       [],
     ),
@@ -214,7 +233,18 @@ export const idlService = IDL.Service({
       [],
     ),
   'createBooking' : IDL.Func(
-      [IDL.Text, IDL.Text, Category, IDL.Text, IDL.Nat, IDL.Text],
+      [
+        IDL.Text,
+        IDL.Text,
+        Category,
+        IDL.Text,
+        IDL.Nat,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Text,
+        IDL.Nat,
+      ],
       [Result_4],
       [],
     ),
@@ -223,6 +253,7 @@ export const idlService = IDL.Service({
       [Result_3],
       [],
     ),
+  'createStayBooking' : IDL.Func([IDL.Text, IDL.Text, IDL.Text], [Result], []),
   'createTicket' : IDL.Func(
       [IDL.Text, IDL.Opt(IDL.Text), IDL.Text, IDL.Text, IDL.Opt(IDL.Text)],
       [Result_2],
@@ -230,13 +261,17 @@ export const idlService = IDL.Service({
     ),
   'deleteCategory' : IDL.Func([IDL.Text], [Result], []),
   'deleteFoodItem' : IDL.Func([IDL.Text], [Result], []),
+  'deleteOwner' : IDL.Func([IDL.Text], [Result], []),
+  'deleteUser' : IDL.Func([IDL.Text], [Result], []),
   'getActiveCategories' : IDL.Func([], [IDL.Vec(CategoryEntry)], ['query']),
+  'getActiveOwners' : IDL.Func([], [IDL.Vec(OwnerRecord)], ['query']),
   'getAdminStats' : IDL.Func([], [AdminStats], ['query']),
   'getAllBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
   'getAllCategories' : IDL.Func([], [IDL.Vec(CategoryEntry)], ['query']),
   'getAllFoodItems' : IDL.Func([], [IDL.Vec(FoodItem)], ['query']),
   'getAllNotifications' : IDL.Func([], [IDL.Vec(Notification)], ['query']),
   'getAllOwners' : IDL.Func([], [IDL.Vec(OwnerRecord)], ['query']),
+  'getAllOwnersAdmin' : IDL.Func([], [IDL.Vec(OwnerRecord)], ['query']),
   'getAllPlaySlots' : IDL.Func([], [IDL.Vec(PlaySlot)], ['query']),
   'getAllRetailItems' : IDL.Func([], [IDL.Vec(RetailItem)], ['query']),
   'getAllStayRooms' : IDL.Func([], [IDL.Vec(StayRoom)], ['query']),
@@ -244,6 +279,11 @@ export const idlService = IDL.Service({
   'getAllUsers' : IDL.Func([], [IDL.Vec(UserRecord)], ['query']),
   'getBookingsByOwner' : IDL.Func([IDL.Text], [IDL.Vec(Booking)], ['query']),
   'getBookingsByUser' : IDL.Func([IDL.Text], [IDL.Vec(Booking)], ['query']),
+  'getDeliveryFee' : IDL.Func(
+      [IDL.Text, IDL.Float64, IDL.Float64],
+      [IDL.Nat],
+      ['query'],
+    ),
   'getFoodItemsByOwner' : IDL.Func([IDL.Text], [IDL.Vec(FoodItem)], ['query']),
   'getNotificationsByTarget' : IDL.Func(
       [IDL.Text],
@@ -263,6 +303,16 @@ export const idlService = IDL.Service({
       ['query'],
     ),
   'getRevenueByOwner' : IDL.Func([], [IDL.Vec(OwnerRevenue)], ['query']),
+  'getSlotsByDate' : IDL.Func(
+      [IDL.Text, IDL.Text],
+      [IDL.Vec(PlaySlot)],
+      ['query'],
+    ),
+  'getStayAvailability' : IDL.Func(
+      [IDL.Text, IDL.Text, IDL.Text],
+      [IDL.Bool],
+      ['query'],
+    ),
   'getStayRoomsByOwner' : IDL.Func([IDL.Text], [IDL.Vec(StayRoom)], ['query']),
   'getTicketsByOwner' : IDL.Func([IDL.Text], [IDL.Vec(Ticket)], ['query']),
   'getTicketsByUser' : IDL.Func([IDL.Text], [IDL.Vec(Ticket)], ['query']),
@@ -295,6 +345,7 @@ export const idlService = IDL.Service({
       [Result],
       [],
     ),
+  'updateDeliveryFeePerKm' : IDL.Func([IDL.Text, IDL.Nat], [Result], []),
   'updateFoodItem' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Nat, IDL.Bool, IDL.Text, IDL.Bool],
       [Result],
@@ -320,12 +371,18 @@ export const idlService = IDL.Service({
       [Result],
       [],
     ),
+  'updateSubscriptionStatus' : IDL.Func(
+      [IDL.Text, SubscriptionStatus, Timestamp, IDL.Text],
+      [Result],
+      [],
+    ),
   'updateUserProfile' : IDL.Func(
       [IDL.Text, IDL.Text, IDL.Text, IDL.Float64, IDL.Float64],
       [Result],
       [],
     ),
   'verifyOwner' : IDL.Func([IDL.Text], [Result], []),
+  'verifySubscriptionPayment' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
 });
 
 export const idlInitArgs = [];
@@ -359,11 +416,14 @@ export const idlFactory = ({ IDL }) => {
   const Result_9 = IDL.Variant({ 'ok' : FoodItem, 'err' : IDL.Text });
   const PlaySlot = IDL.Record({
     'id' : IDL.Text,
+    'startTime' : IDL.Text,
+    'endTime' : IDL.Text,
     'ownerId' : IDL.Text,
     'surfaceType' : IDL.Text,
     'bookedByUserId' : IDL.Opt(IDL.Text),
     'hourlyRate' : IDL.Nat,
     'description' : IDL.Text,
+    'slotDate' : IDL.Text,
     'slotTime' : IDL.Text,
     'isBooked' : IDL.Bool,
   });
@@ -372,6 +432,7 @@ export const idlFactory = ({ IDL }) => {
     'id' : IDL.Text,
     'inStock' : IDL.Bool,
     'ownerId' : IDL.Text,
+    'deliveryFeePerKm' : IDL.Nat,
     'itemName' : IDL.Text,
     'quantity' : IDL.Nat,
     'category' : IDL.Text,
@@ -383,7 +444,9 @@ export const idlFactory = ({ IDL }) => {
     'ownerId' : IDL.Text,
     'pricePerNight' : IDL.Nat,
     'isAvailable' : IDL.Bool,
+    'checkInDate' : IDL.Text,
     'amenities' : IDL.Vec(IDL.Text),
+    'checkOutDate' : IDL.Text,
     'roomName' : IDL.Text,
     'bookedDates' : IDL.Vec(IDL.Text),
   });
@@ -399,14 +462,23 @@ export const idlFactory = ({ IDL }) => {
     'action' : IDL.Text,
     'timestamp' : Timestamp,
   });
+  const SubscriptionStatus = IDL.Variant({
+    'active' : IDL.Null,
+    'expired' : IDL.Null,
+    'inactive' : IDL.Null,
+  });
   const OwnerRecord = IDL.Record({
     'id' : UserId,
+    'subscriptionExpiryDate' : Timestamp,
+    'lastSubscriptionTxId' : IDL.Text,
     'name' : IDL.Text,
     'createdAt' : Timestamp,
     'role' : UserRole,
     'businessName' : IDL.Text,
     'isActive' : IDL.Bool,
+    'lastSubscriptionPaymentDate' : Timestamp,
     'activityLog' : IDL.Vec(ActivityEntry),
+    'subscriptionStatus' : SubscriptionStatus,
     'isVerified' : IDL.Bool,
     'upiId' : IDL.Text,
     'isBanned' : IDL.Bool,
@@ -427,11 +499,15 @@ export const idlFactory = ({ IDL }) => {
   const Booking = IDL.Record({
     'id' : IDL.Text,
     'status' : BookingStatus,
+    'deliveryFee' : IDL.Nat,
     'ownerId' : IDL.Text,
     'userId' : IDL.Text,
     'createdAt' : Timestamp,
+    'checkInDate' : IDL.Text,
     'upiRef' : IDL.Text,
+    'slotDate' : IDL.Text,
     'category' : Category,
+    'checkOutDate' : IDL.Text,
     'amountInr' : IDL.Nat,
     'itemRef' : IDL.Text,
   });
@@ -512,7 +588,7 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'addPlaySlot' : IDL.Func(
-        [IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
+        [IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Text, IDL.Nat, IDL.Text],
         [Result_8],
         [],
       ),
@@ -534,13 +610,29 @@ export const idlFactory = ({ IDL }) => {
         [],
       ),
     'createBooking' : IDL.Func(
-        [IDL.Text, IDL.Text, Category, IDL.Text, IDL.Nat, IDL.Text],
+        [
+          IDL.Text,
+          IDL.Text,
+          Category,
+          IDL.Text,
+          IDL.Nat,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Text,
+          IDL.Nat,
+        ],
         [Result_4],
         [],
       ),
     'createNotification' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, SoundType],
         [Result_3],
+        [],
+      ),
+    'createStayBooking' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [Result],
         [],
       ),
     'createTicket' : IDL.Func(
@@ -550,13 +642,17 @@ export const idlFactory = ({ IDL }) => {
       ),
     'deleteCategory' : IDL.Func([IDL.Text], [Result], []),
     'deleteFoodItem' : IDL.Func([IDL.Text], [Result], []),
+    'deleteOwner' : IDL.Func([IDL.Text], [Result], []),
+    'deleteUser' : IDL.Func([IDL.Text], [Result], []),
     'getActiveCategories' : IDL.Func([], [IDL.Vec(CategoryEntry)], ['query']),
+    'getActiveOwners' : IDL.Func([], [IDL.Vec(OwnerRecord)], ['query']),
     'getAdminStats' : IDL.Func([], [AdminStats], ['query']),
     'getAllBookings' : IDL.Func([], [IDL.Vec(Booking)], ['query']),
     'getAllCategories' : IDL.Func([], [IDL.Vec(CategoryEntry)], ['query']),
     'getAllFoodItems' : IDL.Func([], [IDL.Vec(FoodItem)], ['query']),
     'getAllNotifications' : IDL.Func([], [IDL.Vec(Notification)], ['query']),
     'getAllOwners' : IDL.Func([], [IDL.Vec(OwnerRecord)], ['query']),
+    'getAllOwnersAdmin' : IDL.Func([], [IDL.Vec(OwnerRecord)], ['query']),
     'getAllPlaySlots' : IDL.Func([], [IDL.Vec(PlaySlot)], ['query']),
     'getAllRetailItems' : IDL.Func([], [IDL.Vec(RetailItem)], ['query']),
     'getAllStayRooms' : IDL.Func([], [IDL.Vec(StayRoom)], ['query']),
@@ -564,6 +660,11 @@ export const idlFactory = ({ IDL }) => {
     'getAllUsers' : IDL.Func([], [IDL.Vec(UserRecord)], ['query']),
     'getBookingsByOwner' : IDL.Func([IDL.Text], [IDL.Vec(Booking)], ['query']),
     'getBookingsByUser' : IDL.Func([IDL.Text], [IDL.Vec(Booking)], ['query']),
+    'getDeliveryFee' : IDL.Func(
+        [IDL.Text, IDL.Float64, IDL.Float64],
+        [IDL.Nat],
+        ['query'],
+      ),
     'getFoodItemsByOwner' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(FoodItem)],
@@ -591,6 +692,16 @@ export const idlFactory = ({ IDL }) => {
         ['query'],
       ),
     'getRevenueByOwner' : IDL.Func([], [IDL.Vec(OwnerRevenue)], ['query']),
+    'getSlotsByDate' : IDL.Func(
+        [IDL.Text, IDL.Text],
+        [IDL.Vec(PlaySlot)],
+        ['query'],
+      ),
+    'getStayAvailability' : IDL.Func(
+        [IDL.Text, IDL.Text, IDL.Text],
+        [IDL.Bool],
+        ['query'],
+      ),
     'getStayRoomsByOwner' : IDL.Func(
         [IDL.Text],
         [IDL.Vec(StayRoom)],
@@ -627,6 +738,7 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
+    'updateDeliveryFeePerKm' : IDL.Func([IDL.Text, IDL.Nat], [Result], []),
     'updateFoodItem' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Nat, IDL.Bool, IDL.Text, IDL.Bool],
         [Result],
@@ -652,12 +764,18 @@ export const idlFactory = ({ IDL }) => {
         [Result],
         [],
       ),
+    'updateSubscriptionStatus' : IDL.Func(
+        [IDL.Text, SubscriptionStatus, Timestamp, IDL.Text],
+        [Result],
+        [],
+      ),
     'updateUserProfile' : IDL.Func(
         [IDL.Text, IDL.Text, IDL.Text, IDL.Float64, IDL.Float64],
         [Result],
         [],
       ),
     'verifyOwner' : IDL.Func([IDL.Text], [Result], []),
+    'verifySubscriptionPayment' : IDL.Func([IDL.Text, IDL.Text], [Result], []),
   });
 };
 

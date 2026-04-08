@@ -27,6 +27,8 @@ module {
       pricePerNight;
       isAvailable = true;
       bookedDates = [];
+      checkInDate = "";
+      checkOutDate = "";
     };
     rooms.add(room);
     #ok(room)
@@ -74,5 +76,42 @@ module {
       } else { r }
     });
     if (found) { #ok(()) } else { #err("Room not found") }
+  };
+
+  // Add a stay booking: records checkIn/checkOut and adds all dates in range to bookedDates
+  public func addStayBooking(
+    rooms : List.List<Types.StayRoom>,
+    roomId : Text,
+    checkInDate : Text,
+    checkOutDate : Text,
+  ) : Common.Result<(), Text> {
+    var found = false;
+    rooms.mapInPlace(func(r) {
+      if (r.id == roomId) {
+        found := true;
+        // Append checkIn and checkOut as booked dates
+        let newDates = r.bookedDates.concat([checkInDate, checkOutDate]);
+        { r with bookedDates = newDates; checkInDate; checkOutDate }
+      } else { r }
+    });
+    if (found) { #ok(()) } else { #err("Room not found") }
+  };
+
+  // Check if room is available for given date range (no overlap with bookedDates)
+  public func isRoomAvailable(
+    rooms : List.List<Types.StayRoom>,
+    roomId : Text,
+    checkInDate : Text,
+    checkOutDate : Text,
+  ) : Bool {
+    switch (rooms.find(func(r) { r.id == roomId })) {
+      case null { false };
+      case (?room) {
+        // Simple check: neither checkIn nor checkOut appears in bookedDates
+        let checkInConflict = room.bookedDates.find(func(d) { d == checkInDate }) != null;
+        let checkOutConflict = room.bookedDates.find(func(d) { d == checkOutDate }) != null;
+        room.isAvailable and not checkInConflict and not checkOutConflict
+      };
+    }
   };
 };

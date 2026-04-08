@@ -1,21 +1,27 @@
 {
-  "overview": "PondyOne is a hyper-local three-tier platform for Puducherry and Chennai featuring Customer, Business Owner, and Founder Admin interfaces with mobile-first design, INR payments, and role-based experiences.",
+  "overview": "PondyOne is a hyper-local three-tier marketplace for Puducherry and Chennai with separate interfaces for Customers, Business Owners, and Admins. Features hotel stay bookings with date-based pricing, turf time-slot grid booking, retail delivery fees, SaaS subscription enforcement for owners, and rich booking history for customers.",
   "features": [
-    "Admin owner verification with instant badge and toast feedback",
-    "PWA manifest for mobile install and offline support",
-    "Owner product edit modals for Stay, Play, and Retail listings",
-    "Full CRUD for all four listing categories (Food, Stay, Play, Retail)",
-    "Role-based three-tier interface (Customer, Owner, Admin)",
-    "Mobile-first responsive design with bottom navigation"
+    "Stay bookings with check-in/check-out dates and duration-based pricing",
+    "Turf slot grid with owner-managed time blocks and booked status",
+    "Retail delivery fee calculated by flat rate per km based on customer distance",
+    "SaaS subscription enforcement with UPI verification and account activation",
+    "Clickable booking history with full detail view for customers",
+    "Three-tier role system: Customer, Business Owner, Founder Admin",
+    "UPI-first checkout with manual transaction ID",
+    "Owner analytics dashboard with time-period selector",
+    "Admin hard delete for users and owners",
+    "PWA installable with PWABuilder APK support"
   ],
   "category": "marketplace",
   "tags": [
     "marketplace",
-    "mobile",
-    "pwa",
-    "multisite",
+    "local-commerce",
+    "booking",
     "india",
-    "booking"
+    "pwa",
+    "mobile-first",
+    "multi-tenant",
+    "saas"
   ],
-  "last_updated": "2026-04-08T05:22:13.127Z"
+  "last_updated": "2026-04-08T11:08:16.949Z"
 }

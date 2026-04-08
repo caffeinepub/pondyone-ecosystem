@@ -19,6 +19,7 @@ import {
   BookingStatus,
   Category,
   SoundType,
+  SubscriptionStatus,
   TicketStatus,
   UserRole,
 } from "../backend.d";
@@ -37,7 +38,14 @@ export type {
   AdminStats,
   OwnerRevenue,
 };
-export { BookingStatus, Category, SoundType, UserRole, TicketStatus };
+export {
+  BookingStatus,
+  Category,
+  SoundType,
+  UserRole,
+  TicketStatus,
+  SubscriptionStatus,
+};
 
 // ─── Actor hook (anonymous — no Internet Identity required) ────────────────
 function useBackend() {
@@ -216,6 +224,34 @@ export function useVerifyOwner() {
       return actor.verifyOwner(id);
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["owners"] }),
+  });
+}
+
+// ─── Subscription ────────────────────────────────────────────────────────────
+export function useVerifySubscriptionPayment() {
+  const { actor } = useBackend();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ownerId, txId }: { ownerId: string; txId: string }) => {
+      if (!actor) throw new Error("Backend not ready");
+      return actor.verifySubscriptionPayment(ownerId, txId);
+    },
+    onSuccess: (_data, vars) => {
+      qc.invalidateQueries({ queryKey: ["owner", vars.ownerId] });
+      qc.invalidateQueries({ queryKey: ["owners"] });
+    },
+  });
+}
+
+export function useGetOwnerProfile(id: string) {
+  const { actor, isFetching } = useBackend();
+  return useQuery<OwnerRecord | null>({
+    queryKey: ["owner", id],
+    queryFn: async () => {
+      if (!actor) return null;
+      return actor.getOwnerById(id);
+    },
+    enabled: !!actor && !isFetching && !!id,
   });
 }
 
@@ -402,13 +438,27 @@ export function useAllPlaySlots() {
   });
 }
 
+export function useSlotsByDate(ownerId: string, date: string) {
+  const { actor, isFetching } = useBackend();
+  return useQuery<PlaySlot[]>({
+    queryKey: ["play", ownerId, date],
+    queryFn: async () => {
+      if (!actor) return [];
+      return actor.getSlotsByDate(ownerId, date);
+    },
+    enabled: !!actor && !isFetching && !!ownerId && !!date,
+  });
+}
+
 export function useAddPlaySlot() {
   const { actor } = useBackend();
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (args: {
       ownerId: string;
-      slotTime: string;
+      slotDate: string;
+      startTime: string;
+      endTime: string;
       surfaceType: string;
       hourlyRate: bigint;
       description: string;
@@ -416,7 +466,9 @@ export function useAddPlaySlot() {
       if (!actor) throw new Error("Backend not ready");
       return actor.addPlaySlot(
         args.ownerId,
-        args.slotTime,
+        args.slotDate,
+        args.startTime,
+        args.endTime,
         args.surfaceType,
         args.hourlyRate,
         args.description,
@@ -545,6 +597,18 @@ export function useUpdateRetailItem() {
   });
 }
 
+export function useUpdateDeliveryFeePerKm() {
+  const { actor } = useBackend();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ ownerId, rate }: { ownerId: string; rate: bigint }) => {
+      if (!actor) throw new Error("Backend not ready");
+      return actor.updateDeliveryFeePerKm(ownerId, rate);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["retail"] }),
+  });
+}
+
 // ─── Bookings ────────────────────────────────────────────────────────────────
 export function useBookingsByUser(userId: string) {
   const { actor, isFetching } = useBackend();
@@ -583,6 +647,25 @@ export function useAllBookings() {
   });
 }
 
+export const useGetSlotsByDate = useSlotsByDate;
+
+export function useGetDeliveryFee(
+  ownerId: string,
+  lat: number,
+  lng: number,
+  enabled: boolean,
+) {
+  const { actor, isFetching } = useBackend();
+  return useQuery<bigint>({
+    queryKey: ["deliveryFee", ownerId, lat, lng],
+    queryFn: async () => {
+      if (!actor) return 0n;
+      return actor.getDeliveryFee(ownerId, lat, lng);
+    },
+    enabled: !!actor && !isFetching && !!ownerId && enabled,
+  });
+}
+
 export function useCreateBooking() {
   const { actor } = useBackend();
   const qc = useQueryClient();
@@ -594,6 +677,10 @@ export function useCreateBooking() {
       itemRef: string;
       amountInr: bigint;
       upiRef: string;
+      checkInDate?: string;
+      checkOutDate?: string;
+      slotDate?: string;
+      deliveryFee?: bigint;
     }) => {
       if (!actor) throw new Error("Backend not ready");
       return actor.createBooking(
@@ -603,6 +690,10 @@ export function useCreateBooking() {
         args.itemRef,
         args.amountInr,
         args.upiRef,
+        args.checkInDate ?? "",
+        args.checkOutDate ?? "",
+        args.slotDate ?? "",
+        args.deliveryFee ?? 0n,
       );
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
@@ -891,6 +982,30 @@ export function useLogActivity() {
       if (!actor) throw new Error("Backend not ready");
       return actor.logActivity(userId, action);
     },
+  });
+}
+
+export function useDeleteUser() {
+  const { actor } = useBackend();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!actor) throw new Error("Backend not ready");
+      return actor.deleteUser(id);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["users"] }),
+  });
+}
+
+export function useDeleteOwner() {
+  const { actor } = useBackend();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => {
+      if (!actor) throw new Error("Backend not ready");
+      return actor.deleteOwner(id);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["owners"] }),
   });
 }
 

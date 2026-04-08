@@ -14,7 +14,9 @@ module {
     slots : List.List<Types.PlaySlot>,
     counter : Nat,
     ownerId : Text,
-    slotTime : Text,
+    slotDate : Text,
+    startTime : Text,
+    endTime : Text,
     surfaceType : Text,
     hourlyRate : Nat,
     description : Text,
@@ -23,7 +25,10 @@ module {
     let slot : Types.PlaySlot = {
       id;
       ownerId;
-      slotTime;
+      slotTime = startTime # "-" # endTime;
+      slotDate;
+      startTime;
+      endTime;
       surfaceType;
       hourlyRate;
       description;
@@ -73,6 +78,14 @@ module {
     ownerId : Text,
   ) : [Types.PlaySlot] {
     slots.filter(func(s) { s.ownerId == ownerId }).toArray()
+  };
+
+  public func getByOwnerAndDate(
+    slots : List.List<Types.PlaySlot>,
+    ownerId : Text,
+    date : Text,
+  ) : [Types.PlaySlot] {
+    slots.filter(func(s) { s.ownerId == ownerId and s.slotDate == date }).toArray()
   };
 
   public func getAll(slots : List.List<Types.PlaySlot>) : [Types.PlaySlot] {
